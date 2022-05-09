@@ -13,6 +13,7 @@ import uuid
 
 import aioredis
 import msgpack
+from aioredis import Redis
 
 from channels.exceptions import ChannelFull
 from channels.layers import BaseChannelLayer
@@ -93,8 +94,8 @@ class ConnectionPool:
         if not conns:
             conn = await self.create_conn(loop)
             conns.append(conn)
-        conn = conns.pop()
-        if conn.closed:
+        conn: Redis = conns.pop()
+        if not conn.connection.is_connected:
             conn = await self.pop(loop=loop)
             return conn
         self.in_use[conn] = loop
