@@ -421,7 +421,7 @@ class RedisSingleShardConnection:
     async def _ensure_redis(self):
         if self._redis is None:
             if self.master_name is None:
-                self._redis = await aioredis.create_redis_pool(**self.host)
+                self._redis = await aioredis.from_url(**self.host)
             else:
                 # aioredis default timeout is way too low
                 self._redis = await aioredis.sentinel.create_sentinel(
