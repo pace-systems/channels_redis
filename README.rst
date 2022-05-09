@@ -1,16 +1,30 @@
 channels_redis
 ==============
 
-.. image:: https://api.travis-ci.org/django/channels_redis.svg
-    :target: https://travis-ci.org/django/channels_redis
+.. image:: https://github.com/django/channels_redis/workflows/Tests/badge.svg
+    :target: https://github.com/django/channels_redis/actions?query=workflow%3ATests
 
 .. image:: https://img.shields.io/pypi/v/channels_redis.svg
     :target: https://pypi.python.org/pypi/channels_redis
 
-A Django Channels channel layer that uses Redis as its backing store, and supports
-both a single-server and sharded configurations, as well as group support. Requires
-Python 3.6 or higher to function correctly (3.5 will look like it works, but have
-random errors).
+Provides Django Channels channel layers that use Redis as a backing store.
+
+There are two available implementations:
+
+* ``RedisChannelLayer`` is the orignal layer, and implements channel and group
+  handling itself.
+* ``RedisPubSubChannelLayer`` is newer and leverages Redis Pub/Sub for message
+  dispatch. This layer is currently at *Beta* status, meaning it may be subject
+  to breaking changes whilst it matures.
+
+Both layers support a single-server and sharded configurations.
+
+Installation
+------------
+
+.. code-block::
+
+    pip install channels-redis
 
 **Note:** Prior versions of this package were called ``asgi_redis`` and are
 still available under PyPI as that name if you need them for Channels 1.x projects.
@@ -20,11 +34,26 @@ This package is for Channels 2 projects only.
 Usage
 -----
 
-Set up the channel layer in your Django settings file like so::
+Set up the channel layer in your Django settings file like so:
+
+.. code-block:: python
 
     CHANNEL_LAYERS = {
         "default": {
             "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [("localhost", 6379)],
+            },
+        },
+    }
+
+Or, you can use the alternate implementation which uses Redis Pub/Sub:
+
+.. code-block:: python
+
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.pubsub.RedisPubSubChannelLayer",
             "CONFIG": {
                 "hosts": [("localhost", 6379)],
             },
@@ -39,6 +68,11 @@ Possible options for ``CONFIG`` are listed below.
 The server(s) to connect to, as either URIs, ``(host, port)`` tuples, or dicts conforming to `create_connection <https://aioredis.readthedocs.io/en/v1.1.0/api_reference.html#aioredis.create_connection>`_.
 Defaults to ``['localhost', 6379]``. Pass multiple hosts to enable sharding,
 but note that changing the host list will lose some sharded data.
+
+Sentinel connections require dicts conforming to `create_sentinel <https://aioredis.readthedocs.io/en/v1.3.0/sentinel.html#aioredis.sentinel.create_sentinel>`_
+with an additional `master_name` key specifying the Sentinel
+master set. Plain Redis and Sentinel connections can be mixed and matched if
+sharding.
 
 If your server is listening on a UNIX domain socket, you can also use that to connect: ``["unix:///path/to/redis.sock"]``.
 This should be slightly faster than a loopback TCP connection.
@@ -148,12 +182,49 @@ If you're using Django, you may also wish to set this to your site's
         },
     }
 
+``on_disconnect`` / ``on_reconnect``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The PubSub layer, which maintains long-running connections to Redis, can drop messages in the event of a network partition.
+To handle such situations the PubSub layer accepts optional arguments which will notify consumers of Redis disconnect/reconnect events.
+A common use-case is for consumers to ensure that they perform a full state re-sync to ensure that no messages have been missed.
+
+.. code-block:: python
+
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.pubsub.RedisPubSubChannelLayer",
+            "CONFIG": {
+                "hosts": [...],
+                "on_disconnect": "redis.disconnect",
+            },
+        },
+    }
+
+
+And then in your channels consumer, you can implement the handler:
+
+.. code-block:: python
+
+    async def redis_disconnect(self, *args):
+        # Handle disconnect
 
 Dependencies
 ------------
 
-Redis >= 2.6 is required for `channels_redis`. It supports Python 3.5.2 and up
-(3.5.0 or 3.5.1 will not work due to our dependency, ``aioredis``).
+Redis >= 5.0 is required for `channels_redis`. Python 3.7 or higher is required.
+
+
+Used commands
+~~~~~~~~~~~~~
+
+Your Redis server must support the following commands:
+
+* ``RedisChannelLayer`` uses ``BZPOPMIN``, ``DEL``, ``EVAL``, ``EXPIRE``,
+  ``KEYS``, ``PIPELINE``, ``ZADD``, ``ZCOUNT``, ``ZPOPMIN``, ``ZRANGE``,
+  ``ZREM``, ``ZREMRANGEBYSCORE``
+
+* ``RedisPubSubChannelLayer`` uses ``PUBLISH``, ``SUBSCRIBE``, ``UNSUBSCRIBE``
 
 Contributing
 ------------
