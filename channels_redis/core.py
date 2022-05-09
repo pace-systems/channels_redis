@@ -95,9 +95,9 @@ class ConnectionPool:
             conn = await self.create_conn(loop)
             conns.append(conn)
         conn: Redis = conns.pop()
-        if not conn.connection or not conn.connection.is_connected:
-            conn = await self.pop(loop=loop)
-            return conn
+        #if not conn.connection or not conn.connection.is_connected:
+        #    conn = await self.pop(loop=loop)
+        #    return conn
         self.in_use[conn] = loop
         return conn
 
