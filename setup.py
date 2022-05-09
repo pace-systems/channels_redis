@@ -13,7 +13,7 @@ test_requires = crypto_requires + [
     "pytest~=3.6.0",
     "pytest-asyncio~=0.8",
     "async_generator~=1.8",
-    "async-timeout~=2.0",
+    "async-timeout~=4.0.2",
 ]
 
 
@@ -31,10 +31,10 @@ setup(
     include_package_data=True,
     python_requires=">=3.6",
     install_requires=[
-        "aioredis~=1.0",
+        "aioredis~=2.0",
         "msgpack~=0.6.0",
-        "asgiref~=3.0",
-        "channels~=2.2",
+        "asgiref~=3.3",
+        "channels~=3.0",
     ],
     extras_require={"cryptography": crypto_requires, "tests": test_requires},
 )
