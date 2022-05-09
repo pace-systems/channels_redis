@@ -98,7 +98,7 @@ class RedisPubSubLoopLayer:
         **kwargs,
     ):
         if hosts is None:
-            hosts = [("localhost", 6379)]
+            hosts = ["redis://localhost:6379"]  # ("localhost", 6379)]
         assert (
             isinstance(hosts, list) and len(hosts) > 0
         ), "`hosts` must be a list with at least one Redis server"
@@ -274,7 +274,9 @@ def on_close_noop(sender, exc=None):
 
 class RedisSingleShardConnection:
     def __init__(self, host, channel_layer):
-        self.host = host.copy() if type(host) is dict else {"address": host}
+        if type(host) is dict:
+            raise ValueError('Use URL')
+        self.host = host
         self.master_name = self.host.pop("master_name", None)
         self.channel_layer = channel_layer
         self._subscribed_to = set()
@@ -421,7 +423,7 @@ class RedisSingleShardConnection:
     async def _ensure_redis(self):
         if self._redis is None:
             if self.master_name is None:
-                self._redis = await aioredis.from_url(**self.host)
+                self._redis = await aioredis.from_url(self.host)
             else:
                 # aioredis default timeout is way too low
                 self._redis = await aioredis.sentinel.create_sentinel(
