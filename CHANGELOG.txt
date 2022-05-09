@@ -1,3 +1,112 @@
+3.4.0 (2022-03-10)
+------------------
+
+* Dropped support for Python 3.6, which is now end-of-life, and added CI
+  testing for Python 3.10. (#301).
+
+* Added serialize and deserialize hooks to RedisPubSubChannelLayer (#281).
+
+* Fixed iscoroutine check for pubsub proxied methods (#297).
+
+* Fix workers support when using Redis PubSub layer (#298)
+
+
+3.3.1 (2021-09-30)
+------------------
+
+Two bugfixes for the PubSub channel layer:
+
+* Scoped the channel layer per-event loop, in case multiple loops are in play
+  (#262).
+
+* Ensured consistent hashing PubSub was maintained across processes, or process
+  restarts (#274).
+
+
+3.3.0 (2021-07-01)
+------------------
+
+Two important new features:
+
+* You can now connect using `Redis Sentinel
+  <https://redis.io/topics/sentinel>`. Thanks to @qeternity.
+
+* There's a new ``RedisPubSubChannelLayer`` that uses Redis Pub/Sub to
+  propagate messages, rather than managing channels and groups directly within
+  the layer. For many use-cases this should be simpler, more robust, and more
+  performant.
+
+  Note though, the new ``RedisPubSubChannelLayer`` layer does not provide all
+  the options of the existing layer, including ``expiry``, ``capacity``, and
+  others. Please assess whether it's appropriate for your needs, particularly
+  if you have an existing deployment.
+
+  The ``RedisPubSubChannelLayer`` is currently marked as *Beta*. Please report
+  any issues, and be prepared that there may be breaking changes whilst it
+  matures.
+
+  The ``RedisPubSubChannelLayer`` accepts ``on_disconnect`` and
+  ``on_reconnect`` config options, providing callbacks to handle the relevant
+  connection events to the Redis instance.
+
+  Thanks to Ryan Henning @acu192.
+
+For both features see the README for more details.
+
+
+3.2.0 (2020-10-29)
+------------------
+
+* Adjusted dependency specifiers to allow updating to the latest versions of
+  ``asgiref`` and Channels.
+
+
+3.1.0 (2020-09-06)
+------------------
+
+* Ensured per-channel queues are bounded in size to avoid a slow memory leak if
+  consumers stop reading.
+
+  Queues are bound to the channel layer's configured ``capacity``. You may
+  adjust this to a suitably high value if you were relying on the previously
+  unbounded behaviour.
+
+
+3.0.1 (2020-07-15)
+------------------
+
+* Fixed error in Lua script introduced in 3.0.0.
+
+
+3.0.0 (2020-07-03)
+------------------
+
+* Redis >= 5.0 is now required.
+
+* Updated msgpack requirement to `~=1.0`.
+
+* Ensured channel names are unique using UUIDs.
+
+* Ensured messages are expired even when channel is in constant activity.
+
+* Optimized Redis script caching.
+
+* Reduced group_send failure logging level to reduce log noise.
+
+* Removed trailing `:` from default channel layer `prefix` to avoid double
+  `::` in group keys. (You can restore the old default specifying
+  `prefix="asgi:"` if necessary.)
+
+
+2.4.2 (2020-02-19)
+------------------
+
+* Fixed a bug where ``ConnectionPool.pop()`` might return an invalid
+  connection.
+
+* Added logging for a group_send over capacity failure.
+
+
 2.4.1 (2019-10-23)
 ------------------
 
