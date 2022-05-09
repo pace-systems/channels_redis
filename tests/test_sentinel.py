@@ -8,19 +8,20 @@ from async_generator import async_generator, yield_
 from asgiref.sync import async_to_sync
 from channels_redis.core import ChannelFull, ConnectionPool, RedisChannelLayer
 
-TEST_HOSTS = [("localhost", 6379)]
+SENTINEL_MASTER = "sentinel"
+TEST_HOSTS = [{"sentinels": [("localhost", 26379)], "master_name": SENTINEL_MASTER}]
 
 MULTIPLE_TEST_HOSTS = [
-    "redis://localhost:6379/0",
-    "redis://localhost:6379/1",
-    "redis://localhost:6379/2",
-    "redis://localhost:6379/3",
-    "redis://localhost:6379/4",
-    "redis://localhost:6379/5",
-    "redis://localhost:6379/6",
-    "redis://localhost:6379/7",
-    "redis://localhost:6379/8",
-    "redis://localhost:6379/9",
+    {"sentinels": [("localhost", 26379)], "master_name": SENTINEL_MASTER, "db": 0},
+    {"sentinels": [("localhost", 26379)], "master_name": SENTINEL_MASTER, "db": 1},
+    {"sentinels": [("localhost", 26379)], "master_name": SENTINEL_MASTER, "db": 2},
+    {"sentinels": [("localhost", 26379)], "master_name": SENTINEL_MASTER, "db": 3},
+    {"sentinels": [("localhost", 26379)], "master_name": SENTINEL_MASTER, "db": 4},
+    {"sentinels": [("localhost", 26379)], "master_name": SENTINEL_MASTER, "db": 5},
+    {"sentinels": [("localhost", 26379)], "master_name": SENTINEL_MASTER, "db": 6},
+    {"sentinels": [("localhost", 26379)], "master_name": SENTINEL_MASTER, "db": 7},
+    {"sentinels": [("localhost", 26379)], "master_name": SENTINEL_MASTER, "db": 8},
+    {"sentinels": [("localhost", 26379)], "master_name": SENTINEL_MASTER, "db": 9},
 ]
 
 
@@ -146,7 +147,9 @@ async def test_send_specific_capacity(channel_layer):
     Makes sure we get ChannelFull when we hit the send capacity on a specific channel
     """
     custom_channel_layer = RedisChannelLayer(
-        hosts=TEST_HOSTS, capacity=3, channel_capacity={"one": 1}
+        hosts=TEST_HOSTS,
+        capacity=3,
+        channel_capacity={"one": 1},
     )
     await custom_channel_layer.send("one", {"type": "test.message"})
     with pytest.raises(ChannelFull):
@@ -411,7 +414,7 @@ async def test_connection_pool_pop():
     """
 
     # Setup scenario
-    connection_pool = ConnectionPool({"address": TEST_HOSTS[0]})
+    connection_pool = ConnectionPool(TEST_HOSTS[0])
     conn = await connection_pool.pop()
 
     # Emualte a disconnect and return it to the pool
