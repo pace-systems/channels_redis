@@ -76,7 +76,7 @@ class ConnectionPool:
         if not (sys.version_info >= (3, 8, 0) and AIOREDIS_VERSION >= (1, 3, 1)):
             kwargs["loop"] = loop
         if self.master_name is None:
-            return await aioredis.create_redis_pool(**kwargs)
+            return await aioredis.from_url(**kwargs)
         else:
             kwargs = {"timeout": 2, **kwargs}  # aioredis default is way too low
             sentinel = await aioredis.sentinel.create_sentinel(**kwargs)
