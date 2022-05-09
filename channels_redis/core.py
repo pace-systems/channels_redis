@@ -72,11 +72,12 @@ class ConnectionPool:
 
     async def create_conn(self, loop):
         # One connection per pool since we are emulating a single connection
-        kwargs = {"minsize": 1, "maxsize": 1, **self.host}
+        kwargs = {"minsize": 1, "maxsize": 1} # , **self.host}
         if not (sys.version_info >= (3, 8, 0) and AIOREDIS_VERSION >= (1, 3, 1)):
             kwargs["loop"] = loop
         if self.master_name is None:
-            return await aioredis.from_url(**kwargs)
+            # url = f"redis://{self.host[0]}:{self.host[1]}"
+            return await aioredis.from_url(self.host, **kwargs)
         else:
             kwargs = {"timeout": 2, **kwargs}  # aioredis default is way too low
             sentinel = await aioredis.sentinel.create_sentinel(**kwargs)
@@ -279,7 +280,7 @@ class RedisChannelLayer(BaseChannelLayer):
         """
         # If no hosts were provided, return a default value
         if not hosts:
-            return [{"address": ("localhost", 6379)}]
+            return ["redis://localhost:6379"]  # [{"address": ("localhost", 6379)}]
         # If they provided just a string, scold them.
         if isinstance(hosts, (str, bytes)):
             raise ValueError(
@@ -293,7 +294,7 @@ class RedisChannelLayer(BaseChannelLayer):
                 result.append(entry)
             else:
                 result.append({"address": entry})
-        return result
+        return hosts  # Ignore all this as redis pool uses from_url now.
 
     def _setup_encryption(self, symmetric_encryption_keys):
         # See if we can do encryption if they asked
