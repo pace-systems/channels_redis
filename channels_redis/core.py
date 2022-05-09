@@ -49,8 +49,8 @@ class ConnectionPool:
     """
 
     def __init__(self, host):
-        self.host = host.copy()
-        self.master_name = self.host.pop("master_name", None)
+        self.host = host
+        self.master_name = None  # self.host.pop("master_name", None)
         self.conn_map = {}
         self.sentinel_map = {}
         self.in_use = {}
