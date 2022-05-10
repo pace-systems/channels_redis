@@ -73,9 +73,9 @@ class ConnectionPool:
 
     async def create_conn(self, loop):
         # One connection per pool since we are emulating a single connection
-        kwargs = {"minsize": 1, "maxsize": 1} # , **self.host}
-        if not (sys.version_info >= (3, 8, 0) and AIOREDIS_VERSION >= (1, 3, 1)):
-            kwargs["loop"] = loop
+        kwargs = {"single_connection_client": True, "max_connections": 1}  # , **self.host}
+        # if not (sys.version_info >= (3, 8, 0) and AIOREDIS_VERSION >= (1, 3, 1)):
+        #    kwargs["loop"] = loop
         if self.master_name is None:
             # url = f"redis://{self.host[0]}:{self.host[1]}"
             return await aioredis.from_url(self.host, **kwargs)
