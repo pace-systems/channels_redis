@@ -317,12 +317,12 @@ class RedisSingleShardConnection:
         self._receiver = None
         if self._sub_conn is not None:
             self._sub_conn.close()
-            await self._sub_conn.wait_closed()
+            # await self._sub_conn.wait_closed()
             self._put_redis_conn(self._sub_conn)
             self._sub_conn = None
         if self._pub_conn is not None:
             self._pub_conn.close()
-            await self._pub_conn.wait_closed()
+            # await self._pub_conn.wait_closed()
             self._put_redis_conn(self._pub_conn)
             self._pub_conn = None
         self._subscribed_to = set()
