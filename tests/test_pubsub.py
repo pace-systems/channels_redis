@@ -5,44 +5,42 @@ import sys
 
 import async_timeout
 import pytest
-from async_generator import async_generator, yield_
+import pytest_asyncio
 
 from asgiref.sync import async_to_sync
 from channels_redis.pubsub import RedisPubSubChannelLayer
 
-TEST_HOSTS = [("localhost", 6379)]
+TEST_HOSTS = ["redis://localhost:6379/0"]
 
-
-@pytest.fixture()
-@async_generator
-async def channel_layer():
+@pytest.fixture
+def channel_layer():
     """
     Channel layer fixture that flushes automatically.
     """
-    channel_layer = RedisPubSubChannelLayer(hosts=TEST_HOSTS)
-    await yield_(channel_layer)
-    await channel_layer.flush()
+    return RedisPubSubChannelLayer(
+        hosts=TEST_HOSTS, capacity=3, channel_capacity={"tiny": 1})
 
 
-@pytest.fixture()
-@async_generator
-async def other_channel_layer():
+@pytest.fixture
+def other_channel_layer():
     """
     Channel layer fixture that flushes automatically.
     """
-    channel_layer = RedisPubSubChannelLayer(hosts=TEST_HOSTS)
-    await yield_(channel_layer)
-    await channel_layer.flush()
+    return RedisPubSubChannelLayer(
+        hosts=TEST_HOSTS, capacity=3, channel_capacity={"tiny": 1})
 
 
 @pytest.mark.asyncio
-async def test_send_receive(channel_layer):
+async def test_send_receive(channel_layer: RedisPubSubChannelLayer):
     """
     Makes sure we can send a message to a normal channel then receive it.
     """
+    print("test")
     channel = await channel_layer.new_channel()
+    print('channel', channel)
     await channel_layer.send(channel, {"type": "test.message", "text": "Ahoy-hoy!"})
     message = await channel_layer.receive(channel)
+    print("message", message)
     assert message["type"] == "test.message"
     assert message["text"] == "Ahoy-hoy!"
 
