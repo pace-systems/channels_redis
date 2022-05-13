@@ -5,34 +5,30 @@ import sys
 
 import async_timeout
 import pytest
-from async_generator import async_generator, yield_
+import pytest_asyncio
 
 from asgiref.sync import async_to_sync
 from channels_redis.pubsub import RedisPubSubChannelLayer
 
-TEST_HOSTS = [("localhost", 6379)]
+TEST_HOSTS = ["redis://localhost:6379/0"]
 
 
-@pytest.fixture()
-@async_generator
+@pytest_asyncio.fixture
 async def channel_layer():
     """
     Channel layer fixture that flushes automatically.
     """
-    channel_layer = RedisPubSubChannelLayer(hosts=TEST_HOSTS)
-    await yield_(channel_layer)
-    await channel_layer.flush()
+    return RedisPubSubChannelLayer(
+        hosts=TEST_HOSTS, capacity=3, channel_capacity={"tiny": 1})
 
 
-@pytest.fixture()
-@async_generator
+@pytest_asyncio.fixture
 async def other_channel_layer():
     """
     Channel layer fixture that flushes automatically.
     """
-    channel_layer = RedisPubSubChannelLayer(hosts=TEST_HOSTS)
-    await yield_(channel_layer)
-    await channel_layer.flush()
+    return RedisPubSubChannelLayer(
+        hosts=TEST_HOSTS, capacity=3, channel_capacity={"tiny": 1})
 
 
 @pytest.mark.asyncio

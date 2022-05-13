@@ -3,12 +3,12 @@ import random
 
 import async_timeout
 import pytest
-from async_generator import async_generator, yield_
+import pytest_asyncio
 
 from asgiref.sync import async_to_sync
 from channels_redis.core import ChannelFull, ConnectionPool, RedisChannelLayer
 
-TEST_HOSTS = [("localhost", 6379)]
+TEST_HOSTS = ["redis://localhost:6379/0"]
 
 MULTIPLE_TEST_HOSTS = [
     "redis://localhost:6379/0",
@@ -54,28 +54,26 @@ async def group_send_three_messages_with_delay(group_name, channel_layer, delay)
     )
 
 
-@pytest.fixture()
-@async_generator
+@pytest_asyncio.fixture
 async def channel_layer():
     """
     Channel layer fixture that flushes automatically.
     """
-    channel_layer = RedisChannelLayer(
+    _channel_layer = RedisChannelLayer(
         hosts=TEST_HOSTS, capacity=3, channel_capacity={"tiny": 1}
     )
-    await yield_(channel_layer)
-    await channel_layer.flush()
+    return _channel_layer
+    #await _channel_layer.flush()
 
 
-@pytest.fixture()
-@async_generator
+@pytest_asyncio.fixture
 async def channel_layer_multiple_hosts():
     """
     Channel layer fixture that flushes automatically.
     """
     channel_layer = RedisChannelLayer(hosts=MULTIPLE_TEST_HOSTS, capacity=3)
-    await yield_(channel_layer)
     await channel_layer.flush()
+    return channel_layer
 
 
 @pytest.mark.asyncio
@@ -83,6 +81,8 @@ async def test_send_receive(channel_layer):
     """
     Makes sure we can send a message to a normal channel then receive it.
     """
+    print(channel_layer)
+    print(dir(channel_layer))
     await channel_layer.send(
         "test-channel-1", {"type": "test.message", "text": "Ahoy-hoy!"}
     )
@@ -409,14 +409,15 @@ async def test_connection_pool_pop():
     """
     Makes sure that the connection pool does not return closed connections
     """
+    # TODO: Figure out a way to see if a ConnectionPool is closed or not.
 
     # Setup scenario
-    connection_pool = ConnectionPool({"address": TEST_HOSTS[0]})
+    connection_pool = ConnectionPool(TEST_HOSTS[0])
     conn = await connection_pool.pop()
 
-    # Emualte a disconnect and return it to the pool
+    # Emulate a disconnect and return it to the pool
     conn.close()
-    assert conn.closed
+    assert not conn.connection
     connection_pool.push(conn)
 
     # Ensure the closed connection is inside the pool
@@ -424,11 +425,11 @@ async def test_connection_pool_pop():
     assert len(conn_map_values) == 1
     conns = conn_map_values[0]
     assert len(conns) == 1
-    assert conns[0].closed
+    assert not conns[0].connection
 
     # Retrieve new connection
     conn = await connection_pool.pop()
-    assert not conn.closed
+    assert not conn.connection
 
 
 @pytest.mark.asyncio
