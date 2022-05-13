@@ -78,7 +78,8 @@ class ConnectionPool:
         #    kwargs["loop"] = loop
         if self.master_name is None:
             # url = f"redis://{self.host[0]}:{self.host[1]}"
-            return await aioredis.from_url(self.host, **kwargs)
+            r = await aioredis.from_url(self.host, **kwargs)
+            return await r.client()
         else:
             kwargs = {"timeout": 2, **kwargs}  # aioredis default is way too low
             sentinel = await aioredis.sentinel.create_sentinel(**kwargs)
@@ -95,12 +96,11 @@ class ConnectionPool:
             conn = await self.create_conn(loop)
             conns.append(conn)
         conn: Redis = await self.pop(loop=loop)
-        conn.single_connection_client = True
         self.in_use[conn] = loop
-        await conn.initialize()
-        #if not conn.connection or not conn.connection.is_connected:
-        #    conn = await self.pop(loop=loop)
-        #    return conn
+
+        if not conn.connection or not conn.connection.is_connected:
+            conn = await self.pop(loop=loop)
+            return conn
         return conn
 
     def push(self, conn):
