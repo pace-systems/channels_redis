@@ -3,6 +3,7 @@ import random
 
 import async_timeout
 import pytest
+import pytest_asyncio
 
 from asgiref.sync import async_to_sync
 from channels_redis.pubsub import RedisPubSubChannelLayer
@@ -11,7 +12,7 @@ SENTINEL_MASTER = "sentinel"
 TEST_HOSTS = [{"sentinels": [("localhost", 26379)], "master_name": SENTINEL_MASTER}]
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture()
 async def channel_layer():
     """
     Channel layer fixture that flushes automatically.

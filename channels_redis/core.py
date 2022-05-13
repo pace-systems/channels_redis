@@ -20,6 +20,7 @@ from channels.layers import BaseChannelLayer
 
 from .utils import _consistent_hash
 
+
 logger = logging.getLogger(__name__)
 
 AIOREDIS_VERSION = tuple(map(int, aioredis.__version__.split(".")))
@@ -78,7 +79,7 @@ class ConnectionPool:
         #    kwargs["loop"] = loop
         if self.master_name is None:
             # url = f"redis://{self.host[0]}:{self.host[1]}"
-            return await aioredis.from_url(self.host, **kwargs)
+            return await aioredis.from_url(self.host, health_check_interval=5, **kwargs)
             # return await r.client()
         else:
             kwargs = {"timeout": 2, **kwargs}  # aioredis default is way too low
