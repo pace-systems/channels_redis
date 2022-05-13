@@ -130,10 +130,10 @@ class ConnectionPool:
         if sentinel_map is None:
             sentinel_map = self.sentinel_map
         if conn in sentinel_map:
-            sentinel_map[conn].close()
+            await sentinel_map[conn].close()
             # await sentinel_map[conn].wait_closed()
             del sentinel_map[conn]
-        conn.close()
+        await conn.close()
         # await conn.wait_closed()
 
     async def close_loop(self, loop):
