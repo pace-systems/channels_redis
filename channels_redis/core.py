@@ -94,11 +94,13 @@ class ConnectionPool:
         if not conns:
             conn = await self.create_conn(loop)
             conns.append(conn)
-        conn: Redis = conns.pop()
+        conn: Redis = await self.pop(loop=loop)
+        conn.single_connection_client = True
+        self.in_use[conn] = loop
+        await conn.initialize()
         #if not conn.connection or not conn.connection.is_connected:
         #    conn = await self.pop(loop=loop)
         #    return conn
-        self.in_use[conn] = loop
         return conn
 
     def push(self, conn):
